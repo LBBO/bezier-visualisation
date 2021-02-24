@@ -105,6 +105,9 @@ export class BSpline extends paper.Group {
 
     this.#drawPlot()
     this.#drawGuidancePoints()
+    // this.#drawGuidanceLines()
+    this.#drawCurvesToOrigin()
+
     this.#curvePath.strokeColor = new paper.Color('black')
     this.#curvePath.removeSegments()
 
@@ -121,13 +124,38 @@ export class BSpline extends paper.Group {
     this.addChild(this.#curvePath)
   }
 
+  #drawCurvesToOrigin = () => {
+    const unusableUValues = [
+      this.u_i.slice(0, this.#degree + 1),
+      [...this.u_i.slice(this.u_i.length - this.degree - 1, this.u_i.length)],
+    ]
+
+    unusableUValues.forEach((unusable) => {
+      const path = new paper.Path()
+      path.strokeColor = new paper.Color('rgba(0, 0, 0, 0.3)')
+
+      const minU = Math.min(...unusable)
+      const maxU = Math.max(...unusable)
+      const uValues = Array(100)
+        .fill(1)
+        .map((_, index, all) => minU + ((maxU - minU) * index) / all.length)
+
+      const points = uValues.map((u) =>
+        BSplinePoint(u, this.#degree, this.#u_i, this.#basePoints.points),
+      )
+      points.forEach((point) => path.add(point))
+
+      this.addChild(path)
+    })
+  }
+
   #drawGuidancePoints = () => {
-    const otherPoints = this.#u_i.map((u) =>
+    const baseVectorPoints = this.#u_i.map((u) =>
       BSplinePoint(u, this.#degree, this.#u_i, this.#basePoints.points),
     )
 
     this.addChildren(
-      otherPoints.map((point, index) => {
+      baseVectorPoints.map((point, index) => {
         const group = new paper.Group()
 
         const circle = new paper.Path.Circle(point, 3)
@@ -141,6 +169,37 @@ export class BSpline extends paper.Group {
         return group
       }),
     )
+  }
+
+  #drawGuidanceLines = () => {
+    const path = new paper.Path()
+    path.add(new paper.Point(0, 0))
+    path.strokeColor = new paper.Color('rgba(0, 0, 0, 0.3)')
+
+    // Add base vector points for poly from (0, 0) to first base point
+    this.u_i
+      .slice(0, this.degree)
+      .forEach((point) =>
+        path.add(
+          BSplinePoint(point, this.degree, this.u_i, this.#basePoints.points),
+        ),
+      )
+
+    // add base points interlaced with guidance points
+    this.#basePoints.points.forEach((point, index) => {
+      path.add(point)
+      path.add(
+        BSplinePoint(
+          this.u_i[this.degree + index],
+          this.degree,
+          this.u_i,
+          this.#basePoints.points,
+        ),
+      )
+    })
+
+    path.closePath()
+    this.addChild(path)
   }
 
   public redraw() {
