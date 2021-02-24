@@ -1,6 +1,30 @@
 import paper from 'paper'
 import { BasePoints } from './BasePoints'
 import { BezierCurve } from './BezierCurve'
+import { Plot } from './Plot'
+
+const N = (i: number, r: number, u: number, u_i: number[]): number => {
+  if (!(u_i[i] <= u && u < u_i[i + r + 1])) {
+    return 0
+  } else if (r === 0) {
+    return u_i[i] <= u && u < u_i[i + 1] ? 1 : 0
+  } else {
+    const firstCoefficient = (u - u_i[i]) / (u_i[i + r] - u_i[i])
+    const secondCoefficient =
+      (u_i[i + r + 1] - u) / (u_i[i + r + 1] - u_i[i + 1])
+    const firstPart = N(i, r - 1, u, u_i)
+    const secondPart = N(i + 1, r - 1, u, u_i)
+    let result = firstCoefficient * firstPart + secondCoefficient * secondPart
+
+    // console.log({
+    //   result,
+    //   firstCoefficient,
+    //   secondCoefficient,
+    // })
+
+    return result
+  }
+}
 
 export class BSpline extends paper.Group {
   #degree: number
@@ -17,6 +41,10 @@ export class BSpline extends paper.Group {
       throw new Error(`too little points`)
     }
 
+    // if (this.#u_i.length !== this.#basePoints.points.length) {
+    //   throw new Error(`Wrong amount of u_i`)
+    // }
+
     this.#basePoints.addEventListener('update', this.#drawCurve)
 
     this.#drawCurve()
@@ -26,12 +54,29 @@ export class BSpline extends paper.Group {
     const points = []
 
     for (let i = 1; i < this.#basePoints.points.length; i++) {
-      const startPoint = this.#basePoints.points[i - 1]
-        .clone()
-        .add(this.#basePoints.points[i])
-        .divide(2)
+      const res = this.#basePoints.points.reduce((sum, currPoint, index) => {
+        return sum.add(
+          currPoint
+            .clone()
+            .multiply(N(index, this.#degree, this.#u_i[i], this.#u_i)),
+        )
+      }, new paper.Point(0, 0))
+      // console.log({ res: res.toString() })
 
-      points.push(startPoint)
+      points.push(res)
+
+      // const prevDelta = this.#u_i[i + 1] - this.#u_i[i]
+      // const currDelta = this.#u_i[i + 2] - this.#u_i[i + 1]
+      // const totalDelta = prevDelta + currDelta
+      //
+      // const startPoint = this.#basePoints.points[i - 1]
+      //   .clone()
+      //   .multiply(prevDelta / totalDelta)
+      //   .add(
+      //     this.#basePoints.points[i].clone().multiply(currDelta / totalDelta),
+      //   )
+      //
+      // points.push(startPoint)
     }
 
     return points
@@ -42,21 +87,42 @@ export class BSpline extends paper.Group {
 
     const otherPoints = this.#computePoints()
 
-    this.addChildren(
-      otherPoints.map((point) => {
-        const circle = new paper.Path.Circle(point, 3)
+    const functions = this.#u_i.map((_, index) => (x: number) =>
+      N(index, this.#degree, x, this.#u_i),
+    )
+    const sumOfAllNs = (x: number) =>
+      functions.reduce((sum, func) => sum + func(x), 0)
+    const plot = new Plot(this.#u_i[0], this.#u_i[this.#u_i.length - 1], 0.05, [
+      sumOfAllNs,
+      (x) => {
+        return Math.abs(1 - sumOfAllNs(x)) <= 0.001 ? 1 : 0
+      },
+      ...functions,
+    ])
+    plot.scale(60)
+    plot.scale(1, -1)
+    plot.translate(new paper.Point(1000, 100))
+    this.addChild(plot)
 
+    this.addChildren(
+      otherPoints.map((point, index) => {
+        const group = new paper.Group()
+
+        const circle = new paper.Path.Circle(point, 3)
         circle.fillColor = new paper.Color('green')
 
-        return circle
+        const text = new paper.PointText(point)
+        text.content = `u${index}; t = ${this.#u_i[index + 1]}`
+
+        group.addChild(circle)
+        group.addChild(text)
+        return group
       }),
     )
 
     const numberOfSegments = this.#basePoints.points.length - 1
 
     for (let i = 0; i < numberOfSegments - 1; i++) {
-      const start = i * this.#degree
-
       const startPoint = otherPoints[i]
       const endPoint = otherPoints[i + 1]
 
