@@ -34,25 +34,15 @@ export class BSplineShowcase extends Showcase<Props, State> {
         new this.scope!.Point(400, 200),
         new this.scope!.Point(500, 100),
       ])
-      const degree = 2
 
-      // const uValues = Array(this.#basePoints.points.length + degree + 1)
-      //   .fill(1)
-      //   .map((_, index) => {
-      //     if (index <= degree) {
-      //       return 0
-      //     } else if (index <= this.#basePoints!.points.length - degree + 1) {
-      //       return index - degree
-      //     } else {
-      //       return this.#basePoints!.points.length - degree
-      //     }
-      //   })
-      // const uValues = [0, 1, 2, 3, 4, 5, 6, 7]
-      // const uValues = [0, 1, 2, 3, 3, 4, 5, 6]
-      const uValues = createEquidistantVector(
-        degree,
-        this.#basePoints.points.length,
-      )
+      this.#basePoints.addEventListener('update', () => {
+        this.setState({
+          baseVector: this.#bSpline?.u_i ?? this.state.baseVector,
+        })
+      })
+
+      const degree = 2
+      const uValues = createEquidistantVector(degree, this.#basePoints.length)
 
       this.#bSpline = new BSpline(degree, uValues, this.#basePoints)
       this.scope!.project.activeLayer.addChild(this.#bSpline)
@@ -126,7 +116,7 @@ export class BSplineShowcase extends Showcase<Props, State> {
             checked={this.state.shouldAddPointOnClick}
             onChange={this.#onChangeAddPointOnClick}
           />
-          <div>Add point on checked</div>
+          <div>Add point on click inside canvas</div>
         </label>
         <label>
           <input
@@ -134,7 +124,7 @@ export class BSplineShowcase extends Showcase<Props, State> {
             value={this.state.degree}
             onChange={this.#onChangeDegree}
           />
-          <div>Add point on click inside canvas</div>
+          <div>Degree of polynomials</div>
         </label>
         <div className="filler" />
         {this.state.baseVector.map((value, index, all) => {
