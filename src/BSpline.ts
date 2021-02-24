@@ -2,7 +2,10 @@ import paper from 'paper'
 import { BasePoints } from './BasePoints'
 import { Plot } from './Plot'
 
-const N = (i: number, r: number, u: number, u_i: number[]): number => {
+export const N = (i: number, r: number, u: number, u_i: number[]): number => {
+  const setTo0IfNecessary = (n: number) =>
+    isNaN(n) || Math.abs(n) === Infinity ? 0 : n
+
   if (!(u_i[i] <= u && u < u_i[i + r + 1])) {
     return 0
   } else if (r === 0) {
@@ -13,15 +16,11 @@ const N = (i: number, r: number, u: number, u_i: number[]): number => {
       (u_i[i + r + 1] - u) / (u_i[i + r + 1] - u_i[i + 1])
     const firstPart = N(i, r - 1, u, u_i)
     const secondPart = N(i + 1, r - 1, u, u_i)
-    let result = firstCoefficient * firstPart + secondCoefficient * secondPart
+    let result =
+      setTo0IfNecessary(firstCoefficient) * firstPart +
+      setTo0IfNecessary(secondCoefficient) * secondPart
 
-    // console.log({
-    //   result,
-    //   firstCoefficient,
-    //   secondCoefficient,
-    // })
-
-    return result
+    return setTo0IfNecessary(result)
   }
 }
 
@@ -58,9 +57,16 @@ export class BSpline extends paper.Group {
       throw new Error(`too little points`)
     }
 
-    // if (this.#u_i.length !== this.#basePoints.points.length) {
-    //   throw new Error(`Wrong amount of u_i`)
-    // }
+    if (
+      this.#u_i.length !==
+      this.#basePoints.points.length + this.#degree + 1
+    ) {
+      throw new Error(
+        `Wrong amount of u_i; expected ${
+          this.#basePoints.points.length + this.#degree + 1
+        } but got ${this.#u_i.length}`,
+      )
+    }
 
     this.#basePoints.addEventListener('update', this.#drawCurve)
 
@@ -86,7 +92,7 @@ export class BSpline extends paper.Group {
     this.addChild(plot)
   }
 
-  private get usableUValues() {
+  get usableUValues() {
     return this.#u_i.slice(this.#degree, -this.#degree)
   }
 

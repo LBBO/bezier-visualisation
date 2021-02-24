@@ -32,23 +32,23 @@ export class BSplineShowcase extends Showcase<Props, State> {
           if (index <= degree) {
             return 0
           } else if (index <= this.#basePoints!.points.length - degree + 1) {
-            return index - degree + 1
+            return index - degree
           } else {
-            return this.#basePoints!.points.length - degree + 1
+            return this.#basePoints!.points.length - degree
           }
         })
       console.log(uValues)
       this.scope!.project.activeLayer.addChild(
         // new BSpline(2, [0, 1, 2, 3, 4, 5, 6, 7], this.#basePoints),
-        // new BSpline(2, [0, 1, 2, 2.8, 3, 3.2, 4, 5], this.#basePoints),
-        new BSpline(
-          degree,
-          Array(this.#basePoints.points.length + degree + 1)
-            .fill(1)
-            .map((_, index) => index),
-          this.#basePoints,
-        ),
-        // new BSpline(degree, uValues, this.#basePoints),
+        // new BSpline(2, [0, 1, 2, 3, 3, 4, 5, 6], this.#basePoints),
+        // new BSpline(
+        //   degree,
+        //   Array(this.#basePoints.points.length + degree + 1)
+        //     .fill(1)
+        //     .map((_, index) => index),
+        //   this.#basePoints,
+        // ),
+        new BSpline(degree, uValues, this.#basePoints),
       )
     }
   }
