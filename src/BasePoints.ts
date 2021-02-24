@@ -78,4 +78,8 @@ export class BasePoints extends paper.Group {
     this.#update()
     this.#eventEmitter.dispatchEvent(new Event('update'))
   }
+
+  get length() {
+    return this.points.length
+  }
 }

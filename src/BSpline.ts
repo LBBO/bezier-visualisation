@@ -53,17 +53,14 @@ export class BSpline extends paper.Group {
     this.#u_i = u_i
     this.#basePoints = basePoints
 
-    if (this.#basePoints.points.length < degree + 1) {
+    if (this.#basePoints.length < degree + 1) {
       throw new Error(`too little points`)
     }
 
-    if (
-      this.#u_i.length !==
-      this.#basePoints.points.length + this.#degree + 1
-    ) {
+    if (this.#u_i.length !== this.#basePoints.length + this.#degree + 1) {
       throw new Error(
         `Wrong amount of u_i; expected ${
-          this.#basePoints.points.length + this.#degree + 1
+          this.#basePoints.length + this.#degree + 1
         } but got ${this.#u_i.length}`,
       )
     }
