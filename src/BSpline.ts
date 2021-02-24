@@ -1,6 +1,5 @@
 import paper from 'paper'
 import { BasePoints } from './BasePoints'
-import { BezierCurve } from './BezierCurve'
 import { Plot } from './Plot'
 
 const N = (i: number, r: number, u: number, u_i: number[]): number => {
@@ -26,10 +25,28 @@ const N = (i: number, r: number, u: number, u_i: number[]): number => {
   }
 }
 
+const BSplinePoint = (
+  u: number,
+  degree: number,
+  u_i: number[],
+  basePoints: Array<paper.Point>,
+) => {
+  const result = basePoints.reduce(
+    (sum, basePoint, index) =>
+      sum.add(basePoint.clone().multiply(N(index, degree, u, u_i))),
+    new paper.Point(0, 0),
+  )
+
+  // console.log(result.toString(), u)
+
+  return result
+}
+
 export class BSpline extends paper.Group {
   #degree: number
   #u_i: number[]
   #basePoints: BasePoints
+  #curvePath = new paper.Path()
 
   constructor(degree: number, u_i: number[], basePoints: BasePoints) {
     super()
@@ -50,43 +67,7 @@ export class BSpline extends paper.Group {
     this.#drawCurve()
   }
 
-  #computePoints = () => {
-    const points = []
-
-    for (let i = 1; i < this.#basePoints.points.length; i++) {
-      const res = this.#basePoints.points.reduce((sum, currPoint, index) => {
-        return sum.add(
-          currPoint
-            .clone()
-            .multiply(N(index, this.#degree, this.#u_i[i], this.#u_i)),
-        )
-      }, new paper.Point(0, 0))
-      // console.log({ res: res.toString() })
-
-      points.push(res)
-
-      // const prevDelta = this.#u_i[i + 1] - this.#u_i[i]
-      // const currDelta = this.#u_i[i + 2] - this.#u_i[i + 1]
-      // const totalDelta = prevDelta + currDelta
-      //
-      // const startPoint = this.#basePoints.points[i - 1]
-      //   .clone()
-      //   .multiply(prevDelta / totalDelta)
-      //   .add(
-      //     this.#basePoints.points[i].clone().multiply(currDelta / totalDelta),
-      //   )
-      //
-      // points.push(startPoint)
-    }
-
-    return points
-  }
-
-  #drawCurve = () => {
-    this.removeChildren()
-
-    const otherPoints = this.#computePoints()
-
+  #drawPlot = () => {
     const functions = this.#u_i.map((_, index) => (x: number) =>
       N(index, this.#degree, x, this.#u_i),
     )
@@ -103,6 +84,37 @@ export class BSpline extends paper.Group {
     plot.scale(1, -1)
     plot.translate(new paper.Point(1000, 100))
     this.addChild(plot)
+  }
+
+  private get usableUValues() {
+    return this.#u_i.slice(this.#degree, -this.#degree)
+  }
+
+  #drawCurve = () => {
+    this.removeChildren()
+
+    this.#drawPlot()
+    this.#drawGuidancePoints()
+    this.#curvePath.strokeColor = new paper.Color('black')
+    this.#curvePath.removeSegments()
+
+    const minU = Math.min(...this.usableUValues)
+    const maxU = Math.max(...this.usableUValues)
+    const uValues = Array(100)
+      .fill(1)
+      .map((_, index, all) => minU + ((maxU - minU) * index) / all.length)
+
+    const points = uValues.map((u) =>
+      BSplinePoint(u, this.#degree, this.#u_i, this.#basePoints.points),
+    )
+    points.forEach((point) => this.#curvePath.add(point))
+    this.addChild(this.#curvePath)
+  }
+
+  #drawGuidancePoints = () => {
+    const otherPoints = this.#u_i.map((u) =>
+      BSplinePoint(u, this.#degree, this.#u_i, this.#basePoints.points),
+    )
 
     this.addChildren(
       otherPoints.map((point, index) => {
@@ -119,16 +131,5 @@ export class BSpline extends paper.Group {
         return group
       }),
     )
-
-    const numberOfSegments = this.#basePoints.points.length - 1
-
-    for (let i = 0; i < numberOfSegments - 1; i++) {
-      const startPoint = otherPoints[i]
-      const endPoint = otherPoints[i + 1]
-
-      this.addChild(
-        new BezierCurve([startPoint, this.#basePoints.points[i + 1], endPoint]),
-      )
-    }
   }
 }
