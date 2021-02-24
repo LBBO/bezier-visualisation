@@ -58,11 +58,30 @@ export class BezierCurve extends paper.Group {
         const circle = new paper.Path.Circle(point, 3)
         circle.fillColor = new paper.Color('red')
         circle.onMouseDrag = (event: paper.MouseEvent) => {
+          event.stop()
           this.basePoints = this.#basePoints.map((currPoint, currIndex) =>
             currIndex === pointIndex
               ? currPoint.clone().add(event.delta)
               : currPoint,
           )
+        }
+
+        circle.onClick = (event: paper.MouseEvent & { event: MouseEvent }) => {
+          if (event.event.button === 2) {
+            event.stop()
+            this.basePoints = this.#basePoints.filter(
+              (currPoint, currIndex) => currIndex !== pointIndex,
+            )
+          }
+        }
+
+        let oldCursor: string = 'default'
+        circle.onMouseEnter = () => {
+          oldCursor = circle.project.view.element.style.cursor
+          circle.project.view.element.style.cursor = 'pointer'
+        }
+        circle.onMouseLeave = () => {
+          circle.project.view.element.style.cursor = oldCursor
         }
 
         return circle

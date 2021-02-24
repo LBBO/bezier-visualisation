@@ -6,7 +6,9 @@ import { BezierCurve } from './BezierCurve'
 const useCanvasSetup = () => {
   const [setupComplete, setSetupComplete] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const canvas = <canvas ref={canvasRef} />
+  const canvas = (
+    <canvas ref={canvasRef} onContextMenu={(e) => e.preventDefault()} />
+  )
   const [paperScope, setPaperScope] = useState<InstanceType<
     typeof PaperScope
   > | null>(null)
@@ -34,26 +36,54 @@ const useCanvasSetup = () => {
 
 function App() {
   const { canvas, paperScope } = useCanvasSetup()
+  const [curve, setCurve] = useState<BezierCurve | undefined>()
+  const [addPointOnClick, setAddPointOnClick] = useState(true)
+
+  const onPaperClick = useCallback(
+    (event: paper.MouseEvent & { event: MouseEvent }) => {
+      // if click was left click and wasn't on a control point
+      if (
+        curve &&
+        addPointOnClick &&
+        event.target.className === 'CanvasView' &&
+        event.event.button === 0
+      ) {
+        curve.basePoints = [...curve.basePoints, event.point]
+      }
+    },
+    [addPointOnClick, curve],
+  )
 
   // draw curve
   useEffect(() => {
     if (paperScope) {
-      paperScope.project?.clear()
-      const curvePath = new paperScope.Path()
-      curvePath.strokeColor = new paperScope.Color('black')
-      curvePath.strokeWidth = 2
-      const basePoints = [
-        new paperScope.Point(200, 200),
-        new paperScope.Point(100, 100),
-        new paperScope.Point(300, 100),
-        new paperScope.Point(400, 200),
-      ]
+      if (!curve) {
+        const basePoints = [
+          new paperScope.Point(200, 200),
+          new paperScope.Point(100, 100),
+          new paperScope.Point(300, 100),
+          new paperScope.Point(400, 200),
+        ]
+        setCurve(new BezierCurve(basePoints))
+      }
 
-      const curve = new BezierCurve(basePoints)
+      paper.view.onClick = onPaperClick
     }
-  })
+  }, [curve, onPaperClick, paperScope])
 
-  return <div className="App">{canvas}</div>
+  return (
+    <div className="App">
+      <label>
+        <input
+          type={'checkbox'}
+          checked={addPointOnClick}
+          onChange={(event) => setAddPointOnClick(event.target.checked)}
+        />
+        Add point on checked
+      </label>
+      {canvas}
+    </div>
+  )
 }
 
 export default App
