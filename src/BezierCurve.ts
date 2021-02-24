@@ -26,17 +26,19 @@ const bezierCurve = (t: number, basePoints: Array<paper.Point>) => {
 }
 
 export class BezierCurve extends paper.Group {
-  readonly #basePoints: BasePoints
+  #basePoints: BasePoints | Array<paper.Point>
   #curvePath = new paper.Path()
   #basePointVisualisation = new paper.Group()
 
-  constructor(basePoints: BasePoints) {
+  constructor(basePoints: BasePoints | Array<paper.Point>) {
     super()
     this.#basePoints = basePoints
     this.addChild(this.#curvePath)
     this.addChild(this.#basePointVisualisation)
 
-    this.#basePoints.addEventListener('update', this.createCurve)
+    if (basePoints instanceof BasePoints) {
+      basePoints.addEventListener('update', this.createCurve)
+    }
 
     this.createCurve()
   }
@@ -56,7 +58,18 @@ export class BezierCurve extends paper.Group {
     return this.basePoints.length - 1
   }
 
+  set basePoints(newBasePoints: Array<paper.Point>) {
+    if (this.#basePoints instanceof BasePoints) {
+      this.#basePoints.points = newBasePoints
+    } else {
+      this.#basePoints = newBasePoints
+      this.createCurve()
+    }
+  }
+
   get basePoints(): Array<paper.Point> {
-    return this.#basePoints.points
+    return this.#basePoints instanceof BasePoints
+      ? this.#basePoints.points
+      : this.#basePoints
   }
 }
