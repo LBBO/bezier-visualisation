@@ -1,10 +1,15 @@
 import paper from 'paper'
 import randomColor from 'randomcolor'
 
+type Config = {
+  xScaleStepSize?: number
+}
+
 export class Plot extends paper.Group {
   #minX: number
   #maxX: number
   #stepSize: number
+  #config?: Config
   #funcs: Array<(x: number) => number>
 
   constructor(
@@ -12,12 +17,14 @@ export class Plot extends paper.Group {
     maxX: number,
     stepSize: number,
     funcs: Array<(x: number) => number>,
+    config?: Config,
   ) {
     super()
     this.#minX = minX
     this.#maxX = maxX
     this.#stepSize = stepSize
     this.#funcs = funcs
+    this.#config = config
 
     this.#draw()
   }
@@ -40,16 +47,17 @@ export class Plot extends paper.Group {
       new paper.Path.Line(new paper.Point(0, -0.1), new paper.Point(0, 1.1)),
     )
 
+    const stepSize = this.#config?.xScaleStepSize ?? 1
     coordinateSystem.addChildren(
-      Array(this.#maxX)
+      Array(this.#maxX / stepSize + 1)
         .fill(1)
-        .map(
-          (_, index) =>
-            new paper.Path.Line(
-              new paper.Point(index + 1, -0.1),
-              new paper.Point(index + 1, 0.1),
-            ),
-        ),
+        .map((_, index) => {
+          const x = this.#minX + stepSize * index
+          return new paper.Path.Line(
+            new paper.Point(x, -0.1),
+            new paper.Point(x, 0.1),
+          )
+        }),
     )
 
     coordinateSystem.strokeColor = new paper.Color('grey')
@@ -58,12 +66,14 @@ export class Plot extends paper.Group {
 
   #drawGraphs = () => {
     const colors = randomColor({
-      count: 10,
+      count: this.#funcs.length,
       seed: 'abcd',
     }).map((hexString) => new paper.Color(hexString))
 
     this.#funcs.forEach((func, funcIndex) => {
-      const xValues = Array((this.#maxX - this.#minX) / this.#stepSize)
+      const xValues = Array(
+        Math.floor((this.#maxX - this.#minX) / this.#stepSize) + 1,
+      )
         .fill(1)
         .map((_, index) => this.#minX + index * this.#stepSize)
 

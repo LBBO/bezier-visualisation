@@ -1,6 +1,7 @@
 import paper from 'paper'
 import { binomial } from './Math'
 import { BasePoints } from './BasePoints'
+import { Plot } from './Plot'
 
 const BernsteinPoly = (n: number, i: number, t: number): number => {
   let binomialResult: number
@@ -25,25 +26,32 @@ const bezierCurve = (t: number, basePoints: Array<paper.Point>) => {
   return sum
 }
 
+type Config = { plotBernsteinCurves?: boolean }
+
 export class BezierCurve extends paper.Group {
   #basePoints: BasePoints | Array<paper.Point>
   #curvePath = new paper.Path()
   #basePointVisualisation = new paper.Group()
+  #config: Config = {}
+  #plot?: Plot
 
-  constructor(basePoints: BasePoints | Array<paper.Point>) {
+  constructor(basePoints: BasePoints | Array<paper.Point>, config?: Config) {
     super()
     this.#basePoints = basePoints
     this.addChild(this.#curvePath)
     this.addChild(this.#basePointVisualisation)
-
-    if (basePoints instanceof BasePoints) {
-      basePoints.addEventListener('update', this.createCurve)
+    if (config) {
+      this.#config = config
     }
 
-    this.createCurve()
+    if (basePoints instanceof BasePoints) {
+      basePoints.addEventListener('update', this.drawCurve)
+    }
+
+    this.drawCurve()
   }
 
-  private createCurve = () => {
+  private drawCurve = () => {
     this.#curvePath.removeSegments()
     this.#curvePath.strokeColor = new paper.Color('black')
 
@@ -52,6 +60,39 @@ export class BezierCurve extends paper.Group {
       .map((_, index) => index / 50)
       .map((t) => bezierCurve(t, this.basePoints))
     curvePoints.forEach((point) => this.#curvePath.add(point))
+
+    this.#plotBernsteinCurves()
+  }
+
+  #plotBernsteinCurves = () => {
+    this.#plot?.remove()
+
+    if (this.#config.plotBernsteinCurves) {
+      const functions = this.basePoints.map((_, index) => (x: number) =>
+        BernsteinPoly(this.degree, index, x),
+      )
+      const sumOfAllNs = (x: number) =>
+        functions.reduce((sum, func) => sum + func(x), 0)
+
+      const plot = new Plot(
+        0,
+        1,
+        0.05,
+        [
+          sumOfAllNs,
+          (x) => {
+            return Math.abs(1 - sumOfAllNs(x)) <= 0.001 ? 1 : 0
+          },
+          ...functions,
+        ],
+        { xScaleStepSize: 0.1 },
+      )
+      plot.scale(500, 150)
+      plot.scale(1, -1)
+      plot.translate(new paper.Point(1000, 100))
+      this.addChild(plot)
+      this.#plot = plot
+    }
   }
 
   get degree(): number {
@@ -63,7 +104,7 @@ export class BezierCurve extends paper.Group {
       this.#basePoints.points = newBasePoints
     } else {
       this.#basePoints = newBasePoints
-      this.createCurve()
+      this.drawCurve()
     }
   }
 

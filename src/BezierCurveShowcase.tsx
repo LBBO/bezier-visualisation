@@ -27,7 +27,9 @@ export class BezierCurveShowcase extends Showcase<Props, State> {
         new this.scope!.Point(300, 100),
         new this.scope!.Point(400, 200),
       ])
-      this.#curve = new BezierCurve(this.#basePoints)
+      this.#curve = new BezierCurve(this.#basePoints, {
+        plotBernsteinCurves: true,
+      })
     }
   }
 

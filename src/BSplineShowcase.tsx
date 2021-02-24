@@ -19,14 +19,16 @@ export class BSplineShowcase extends Showcase<Props, State> {
       super.setup()
       this.scope!.view.onClick = this.#onCanvasClick
       this.#basePoints = new BasePoints([
-        new this.scope!.Point(200, 200),
         new this.scope!.Point(100, 100),
+        new this.scope!.Point(200, 200),
         new this.scope!.Point(300, 100),
         new this.scope!.Point(400, 200),
         new this.scope!.Point(500, 100),
       ])
       this.scope!.project.activeLayer.addChild(
-        new BSpline(2, [], this.#basePoints),
+        // new BSpline(2, [0, 1, 2, 3, 4, 5, 6, 7], this.#basePoints),
+        // new BSpline(2, [0, 1, 2, 2.8, 3, 3.2, 4, 5], this.#basePoints),
+        new BSpline(2, [0, 1, 2, 3, 4, 5, 6, 7], this.#basePoints),
       )
     }
   }
@@ -48,6 +50,7 @@ export class BSplineShowcase extends Showcase<Props, State> {
   renderChildren = () => {
     return (
       <>
+        <h2>B-Splines</h2>
         <label>
           <input
             type={'checkbox'}
