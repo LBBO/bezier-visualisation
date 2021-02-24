@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import paper, { PaperScope } from 'paper'
+import { BezierCurve } from './BezierCurve'
 
 const useCanvasSetup = () => {
   const [setupComplete, setSetupComplete] = useState(false)
@@ -31,47 +32,6 @@ const useCanvasSetup = () => {
   return { canvas, paperScope }
 }
 
-const factorial = (n: number): number => {
-  if (n < 0 || n % 1 !== 0) {
-    throw new Error(`Invalid value n = ${n} for computing n!`)
-  } else {
-    let product = 1
-
-    for (let i = 1; i <= n; i++) {
-      product *= i
-    }
-
-    return product
-  }
-}
-
-const binomial = (n: number, k: number): number =>
-  factorial(n) / (factorial(k) * factorial(n - k))
-
-const BernsteinPoly = (n: number, i: number, t: number): number => {
-  let binomialResult: number
-
-  try {
-    binomialResult = binomial(n, i)
-  } catch (e) {
-    console.log(e)
-    binomialResult = 0
-  }
-
-  return binomialResult * t ** i * (1 - t) ** (n - i)
-}
-
-const bezierCurve = (t: number, basePoints: Array<paper.Point>) => {
-  let sum = new paper.Point(0, 0)
-  const n = basePoints.length - 1
-
-  for (let i = 0; i <= n; i++) {
-    sum = sum.add(basePoints[i].clone().multiply(BernsteinPoly(n, i, t)))
-  }
-
-  return sum
-}
-
 function App() {
   const { canvas, paperScope } = useCanvasSetup()
 
@@ -89,26 +49,7 @@ function App() {
         new paperScope.Point(400, 200),
       ]
 
-      basePoints.forEach((point) => {
-        const circle = new paperScope.Path.Circle(point, 3)
-        circle.fillColor = new paperScope.Color('red')
-        circle.onMouseDrag = (event: paper.MouseEvent) => {
-          circle.position.add(event.delta)
-        }
-      })
-
-      const [...curvePoints] = Array(50 + 1)
-        .fill(1)
-        .map((_, index) => index / 50)
-        .map((t) => bezierCurve(t, basePoints))
-      curvePoints.forEach((point) => curvePath.add(point))
-
-      // const rect = new paperScope.Path.Rectangle(
-      //   new paperScope.Point(10, 10),
-      //   new paperScope.Point(100, 100),
-      // )
-      // rect.fillColor = new paperScope.Color('black')
-      // paperScope.view.update()
+      const curve = new BezierCurve(basePoints)
     }
   })
 
