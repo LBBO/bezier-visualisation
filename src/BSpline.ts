@@ -66,6 +66,13 @@ export class BSpline extends paper.Group {
     }
 
     this.#basePoints.addEventListener('update', this.#drawCurve)
+    this.#basePoints.addEventListener('removePoint', ((e: {
+      index?: number
+    }) => {
+      if (e.index !== undefined) {
+        this.#onPointWasRemoved(e.index)
+      }
+    }) as any)
 
     this.#drawCurve()
   }
@@ -159,6 +166,11 @@ export class BSpline extends paper.Group {
   public addPoint(newPoint: paper.Point) {
     this.#u_i = [...this.u_i, Math.max(...this.u_i) + 1]
     this.#basePoints.points = [...this.#basePoints.points, newPoint]
+  }
+
+  #onPointWasRemoved = (deletedIndex: number) => {
+    this.#u_i = this.u_i.filter((_, currIndex) => currIndex !== deletedIndex)
+    this.redraw()
   }
 }
 

@@ -29,6 +29,13 @@ export class BasePoints extends paper.Group {
         circle.onClick = (event: paper.MouseEvent & { event: MouseEvent }) => {
           if (event.event.button === 2) {
             event.stop()
+
+            const customEvent: Event & { index?: number } = new Event(
+              'removePoint',
+            )
+            customEvent.index = pointIndex
+            this.#eventEmitter.dispatchEvent(customEvent)
+
             this.points = this.#basePoints.filter(
               (currPoint, currIndex) => currIndex !== pointIndex,
             )
