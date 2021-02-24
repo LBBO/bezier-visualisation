@@ -37,11 +37,17 @@ export class BasePoints extends paper.Group {
 
         let oldCursor: string = 'default'
         circle.onMouseEnter = () => {
-          oldCursor = circle.project.view.element.style.cursor
-          circle.project.view.element.style.cursor = 'pointer'
+          const element = circle.project.view?.element
+          if (element) {
+            oldCursor = element.style.cursor
+            element.style.cursor = 'pointer'
+          }
         }
         circle.onMouseLeave = () => {
-          circle.project.view.element.style.cursor = oldCursor
+          const element = circle.project.view?.element
+          if (element) {
+            element.style.cursor = oldCursor
+          }
         }
 
         return circle
