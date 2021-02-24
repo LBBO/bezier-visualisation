@@ -15,7 +15,7 @@ export class BasePoints extends paper.Group {
 
     this.addChildren(
       this.#basePoints.map((point, pointIndex) => {
-        const circle = new paper.Path.Circle(point, 3)
+        const circle = new paper.Path.Circle(point, 5)
         circle.fillColor = new paper.Color('red')
         circle.onMouseDrag = (event: paper.MouseEvent) => {
           event.stop()
