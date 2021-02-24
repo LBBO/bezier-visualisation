@@ -130,7 +130,7 @@ export class BSpline extends paper.Group {
         circle.fillColor = new paper.Color('green')
 
         const text = new paper.PointText(point)
-        text.content = `u${index}; t = ${this.#u_i[index + 1]}`
+        text.content = `u${index}; t = ${this.#u_i[index]}`
 
         group.addChild(circle)
         group.addChild(text)
