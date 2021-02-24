@@ -1,12 +1,7 @@
-import { BSpline, N } from './BSpline'
+import { BSpline, createEquidistantVector, N } from './BSpline'
 import { BasePoints } from './BasePoints'
 import paper from 'paper'
 import { createCanvas } from 'canvas'
-
-const createEquidistantVector = (degree: number, numberOfPoints: number) =>
-  Array(degree + numberOfPoints + 1)
-    .fill(1)
-    .map((_, index) => index)
 
 beforeAll(() => {
   const canvas = (createCanvas(200, 200) as unknown) as HTMLCanvasElement

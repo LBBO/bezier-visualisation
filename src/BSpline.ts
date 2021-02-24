@@ -138,4 +138,37 @@ export class BSpline extends paper.Group {
       }),
     )
   }
+
+  public redraw() {
+    this.#drawCurve()
+  }
+
+  get u_i() {
+    return this.#u_i
+  }
+
+  set u_i(newValues) {
+    this.#u_i = newValues
+  }
+
+  get degree() {
+    return this.#degree
+  }
+
+  set degree(newDegree) {
+    this.#degree = newDegree
+  }
+
+  public addPoint(newPoint: paper.Point) {
+    this.#u_i = [...this.u_i, Math.max(...this.u_i) + 1]
+    this.#basePoints.points = [...this.#basePoints.points, newPoint]
+  }
 }
+
+export const createEquidistantVector = (
+  degree: number,
+  numberOfPoints: number,
+) =>
+  Array(degree + numberOfPoints + 1)
+    .fill(1)
+    .map((_, index) => index)

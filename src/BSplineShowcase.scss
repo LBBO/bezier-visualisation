@@ -1,0 +1,37 @@
+.showcase {
+  padding: 2em;
+  &:not(:first-child) {
+    padding-top: 1em;
+  }
+  &:not(:last-child) {
+    padding-bottom: 1em;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+
+    h2 {
+      grid-column: 1 / -1;
+      justify-self: center;
+    }
+
+    p {
+      grid-column: 1 / -1;
+      text-align: left;
+      width: 70ch;
+      justify-self: center;
+      padding-bottom: 2em;
+    }
+
+    .filler {
+      grid-column: auto / -1;
+    }
+
+    .base-vector-input {
+      display: grid;
+      grid-template-columns: max-content auto;
+      padding: 0 2em;
+    }
+  }
+}

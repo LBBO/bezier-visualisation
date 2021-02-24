@@ -2,16 +2,25 @@ import React from 'react'
 import { Showcase } from './Showcase'
 import { BasePoints } from './BasePoints'
 import paper from 'paper'
-import { BSpline } from './BSpline'
+import { BSpline, createEquidistantVector } from './BSpline'
+import './BSplineShowcase.scss'
 
-type State = { shouldAddPointOnClick: boolean }
+type State = {
+  shouldAddPointOnClick: boolean
+  degree: number
+  baseVector: number[]
+}
 type Props = {}
 
 export class BSplineShowcase extends Showcase<Props, State> {
   #basePoints: BasePoints | undefined
+  #bSpline: BSpline | undefined
 
   state = {
     shouldAddPointOnClick: false,
+    degree: 2,
+    // # base points + degree + 1 equidistant values
+    baseVector: createEquidistantVector(2, 5),
   }
 
   setup() {
@@ -26,40 +35,33 @@ export class BSplineShowcase extends Showcase<Props, State> {
         new this.scope!.Point(500, 100),
       ])
       const degree = 2
-      const uValues = Array(this.#basePoints.points.length + degree + 1)
-        .fill(1)
-        .map((_, index) => {
-          if (index <= degree) {
-            return 0
-          } else if (index <= this.#basePoints!.points.length - degree + 1) {
-            return index - degree
-          } else {
-            return this.#basePoints!.points.length - degree
-          }
-        })
-      console.log(uValues)
-      this.scope!.project.activeLayer.addChild(
-        // new BSpline(2, [0, 1, 2, 3, 4, 5, 6, 7], this.#basePoints),
-        // new BSpline(2, [0, 1, 2, 3, 3, 4, 5, 6], this.#basePoints),
-        // new BSpline(
-        //   degree,
-        //   Array(this.#basePoints.points.length + degree + 1)
-        //     .fill(1)
-        //     .map((_, index) => index),
-        //   this.#basePoints,
-        // ),
-        new BSpline(degree, uValues, this.#basePoints),
+
+      // const uValues = Array(this.#basePoints.points.length + degree + 1)
+      //   .fill(1)
+      //   .map((_, index) => {
+      //     if (index <= degree) {
+      //       return 0
+      //     } else if (index <= this.#basePoints!.points.length - degree + 1) {
+      //       return index - degree
+      //     } else {
+      //       return this.#basePoints!.points.length - degree
+      //     }
+      //   })
+      // const uValues = [0, 1, 2, 3, 4, 5, 6, 7]
+      // const uValues = [0, 1, 2, 3, 3, 4, 5, 6]
+      const uValues = createEquidistantVector(
+        degree,
+        this.#basePoints.points.length,
       )
+
+      this.#bSpline = new BSpline(degree, uValues, this.#basePoints)
+      this.scope!.project.activeLayer.addChild(this.#bSpline)
     }
   }
 
   #onCanvasClick = (event: paper.MouseEvent & { event: MouseEvent }) => {
-    if (
-      this.state.shouldAddPointOnClick &&
-      this.#basePoints &&
-      event.event.button === 0
-    ) {
-      this.#basePoints.points = [...this.#basePoints.points, event.point]
+    if (this.state.shouldAddPointOnClick && event.event.button === 0) {
+      this.#bSpline?.addPoint(event.point)
     }
   }
 
@@ -67,19 +69,93 @@ export class BSplineShowcase extends Showcase<Props, State> {
     this.setState({ shouldAddPointOnClick: event.target.checked })
   }
 
+  #onChangeDegree = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newDegree = Math.max(1, parseInt(event.target.value))
+
+    if (this.#bSpline && this.#basePoints) {
+      this.#bSpline.degree = newDegree
+
+      const currVectorLength = this.#bSpline.u_i.length
+      const expectedLength =
+        this.#basePoints.points.length + this.#bSpline.degree + 1
+
+      if (currVectorLength < expectedLength) {
+        this.#bSpline.u_i = this.#bSpline.u_i.slice(0, expectedLength)
+      }
+
+      this.#bSpline.redraw()
+
+      this.setState({
+        degree: this.#bSpline.degree,
+        baseVector: this.#bSpline.u_i,
+      })
+    }
+  }
+
+  #onChangeBaseVectorValue = (
+    index: number,
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (this.#bSpline) {
+      const newBaseVector = this.#bSpline.u_i.map((currValue, currIndex) =>
+        currIndex === index ? parseInt(event.target.value) : currValue,
+      )
+      this.#bSpline.u_i = newBaseVector
+      this.#bSpline.redraw()
+
+      this.setState({ baseVector: newBaseVector })
+    }
+  }
+
   renderChildren = () => {
     return (
-      <>
+      <div className={'controls'}>
         <h2>B-Splines</h2>
+        <p>
+          Left-clicks create new points; right-clicks remove them. The graph to
+          the right shows the "influence polynomials" with two exceptions: the
+          large pink curve is the sum of all influences and the blue curve with
+          (hopefully two) vertical lines shows where the sum is 1 (i.e. where
+          the spline is defined).
+        </p>
+        {/* Just taking up the grid slot */}
+        <div />
         <label>
           <input
             type={'checkbox'}
             checked={this.state.shouldAddPointOnClick}
             onChange={this.#onChangeAddPointOnClick}
           />
-          Add point on checked
+          <div>Add point on checked</div>
         </label>
-      </>
+        <label>
+          <input
+            type={'number'}
+            value={this.state.degree}
+            onChange={this.#onChangeDegree}
+          />
+          <div>Add point on click inside canvas</div>
+        </label>
+        <div className="filler" />
+        {this.state.baseVector.map((value, index, all) => {
+          return (
+            <label className={'base-vector-input'} key={index}>
+              <span>
+                u<sub>{index}</sub> =&nbsp;
+              </span>
+              <input
+                type={'number'}
+                value={value}
+                min={all[index - 1]}
+                max={all[index + 1]}
+                onChange={(event) =>
+                  this.#onChangeBaseVectorValue(index, event)
+                }
+              />
+            </label>
+          )
+        })}
+      </div>
     )
   }
 }

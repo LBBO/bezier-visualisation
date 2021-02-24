@@ -50,6 +50,7 @@ export class BezierCurveShowcase extends Showcase<Props, State> {
   renderChildren = () => {
     return (
       <>
+        <h2>Bézier Curves</h2>
         <label>
           <input
             type={'checkbox'}
