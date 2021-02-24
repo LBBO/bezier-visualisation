@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import paper, { PaperScope } from 'paper'
 import { BezierCurve } from './BezierCurve'
+import { BasePoints } from './BasePoints'
 
 const useCanvasSetup = () => {
   const [setupComplete, setSetupComplete] = useState(false)
@@ -36,6 +37,7 @@ const useCanvasSetup = () => {
 
 function App() {
   const { canvas, paperScope } = useCanvasSetup()
+  const [basePoints, setBasePoints] = useState<BasePoints | undefined>()
   const [curve, setCurve] = useState<BezierCurve | undefined>()
   const [addPointOnClick, setAddPointOnClick] = useState(true)
 
@@ -44,26 +46,28 @@ function App() {
       // if click was left click and wasn't on a control point
       if (
         curve &&
+        basePoints &&
         addPointOnClick &&
         event.target.className === 'CanvasView' &&
         event.event.button === 0
       ) {
-        curve.basePoints = [...curve.basePoints, event.point]
+        basePoints.points = [...curve.basePoints, event.point]
       }
     },
-    [addPointOnClick, curve],
+    [addPointOnClick, basePoints, curve],
   )
 
   // draw curve
   useEffect(() => {
     if (paperScope) {
       if (!curve) {
-        const basePoints = [
+        const basePoints = new BasePoints([
           new paperScope.Point(200, 200),
           new paperScope.Point(100, 100),
           new paperScope.Point(300, 100),
           new paperScope.Point(400, 200),
-        ]
+        ])
+        setBasePoints(basePoints)
         setCurve(new BezierCurve(basePoints))
       }
 
