@@ -86,9 +86,11 @@ export class BSplineShowcase extends Showcase<Props, State> {
     index: number,
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    if (this.#bSpline) {
+    const parsed = parseInt(event.target.value)
+
+    if (this.#bSpline && !Number.isNaN(parsed)) {
       const newBaseVector = this.#bSpline.u_i.map((currValue, currIndex) =>
-        currIndex === index ? parseInt(event.target.value) : currValue,
+        currIndex === index ? parsed : currValue,
       )
       this.#bSpline.u_i = newBaseVector
       this.#bSpline.redraw()
